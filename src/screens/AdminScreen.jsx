@@ -85,6 +85,10 @@ function AdminDashboard({ user, handleLogout }) {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState(null)
+  const [filterGrade, setFilterGrade] = useState('all')
+  const [filterLevel, setFilterLevel] = useState('all')
+  const [filterSubject, setFilterSubject] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     loadQuestions()
@@ -127,7 +131,43 @@ function AdminDashboard({ user, handleLogout }) {
           border: '2px solid #F44336', borderRadius: 8, cursor: 'pointer'
         }}>Sign Out</button>
       </div>
-
+        {/* Search and Filter */}
+      <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <input
+          type="text"
+          placeholder="🔍 Search questions..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%', padding: '10px 14px', borderRadius: 10,
+            border: '2px solid #EDE1FF', fontSize: 14, boxSizing: 'border-box', outline: 'none'
+          }}
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)}
+            style={{ padding: '8px', borderRadius: 8, border: '2px solid #EDE1FF', fontSize: 13 }}>
+            <option value="all">All Grades</option>
+            <option value="1">Grade 1</option>
+            <option value="2">Grade 2</option>
+            <option value="3">Grade 3</option>
+            <option value="4">Grade 4</option>
+          </select>
+          <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
+            style={{ padding: '8px', borderRadius: 8, border: '2px solid #EDE1FF', fontSize: 13 }}>
+            <option value="all">All Levels</option>
+            {[1,2,3,4,5,6,7,8,9,10].map(l => <option key={l} value={l}>Level {l}</option>)}
+          </select>
+          <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
+            style={{ padding: '8px', borderRadius: 8, border: '2px solid #EDE1FF', fontSize: 13 }}>
+            <option value="all">All Subjects</option>
+            <option>English</option>
+            <option>Math</option>
+            <option>Science</option>
+            <option>History</option>
+            <option>Values</option>
+          </select>
+        </div>
+      </div>
       <button onClick={handleAddNew} style={{
         width: '100%', padding: '14px', background: '#6200EE', color: 'white',
         border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 'bold',
@@ -144,7 +184,22 @@ function AdminDashboard({ user, handleLogout }) {
 
       {loading ? <p>Loading questions...</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {questions.map(q => (
+          <p style={{ fontSize: 13, color: '#888', margin: '0 0 8px' }}>
+            Showing {questions.filter(q => {
+              const matchGrade = filterGrade === 'all' || q.gradeLevel === parseInt(filterGrade)
+              const matchLevel = filterLevel === 'all' || q.gameLevel === parseInt(filterLevel)
+              const matchSubject = filterSubject === 'all' || q.subject === filterSubject
+              const matchSearch = search === '' || q.text.toLowerCase().includes(search.toLowerCase())
+              return matchGrade && matchLevel && matchSubject && matchSearch
+            }).length} of {questions.length} questions
+          </p>
+          {questions.filter(q => {
+            const matchGrade = filterGrade === 'all' || q.gradeLevel === parseInt(filterGrade)
+            const matchLevel = filterLevel === 'all' || q.gameLevel === parseInt(filterLevel)
+            const matchSubject = filterSubject === 'all' || q.subject === filterSubject
+            const matchSearch = search === '' || q.text.toLowerCase().includes(search.toLowerCase())
+            return matchGrade && matchLevel && matchSubject && matchSearch
+          }).map(q => (
             <div key={q.id} style={{
               background: 'white', borderRadius: 12, padding: 16,
               border: '2px solid #EDE1FF', boxShadow: '0 2px 8px rgba(98,0,238,0.06)'
