@@ -8,12 +8,12 @@ import AdminScreen from './screens/AdminScreen'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.DEV ? '/' : '/eduquest'}>
       <Routes>
         <Route path="/" element={<HomeScreen />} />
-        <Route path="/levels/:name" element={<LevelMapScreen />} />
-        <Route path="/quiz/:level/:name" element={<QuizScreen />} />
-        <Route path="/result/:level/:correct/:total/:name" element={<ResultScreen />} />
+        <Route path="/levels/:name/:grade" element={<LevelMapScreen />} />
+        <Route path="/quiz/:level/:name/:grade" element={<QuizScreen />} />
+        <Route path="/result/:level/:correct/:total/:name/:grade" element={<ResultScreen />} />
         <Route path="/leaderboard" element={<LeaderboardScreen />} />
         <Route path="/admin" element={<AdminScreen />} />
       </Routes>

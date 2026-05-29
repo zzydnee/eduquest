@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 
 function ResultScreen() {
-  const { level, correct, total, name } = useParams()
+  const { level, correct, total, name, grade } = useParams()
   const navigate = useNavigate()
 
   const correctNum = parseInt(correct)
@@ -11,7 +11,7 @@ function ResultScreen() {
   const xp = correctNum * 10
 
   const emoji = stars === 3 ? '🏆' : stars === 2 ? '🥈' : stars === 1 ? '🥉' : '😅'
-  const message = stars === 3 ? 'Perfect! You are a genius! 🧠' : stars === 2 ? 'Great job! Keep it up! 💪' : stars === 1 ? 'Good try! Practice more!' : 'Don\'t give up! Try again!'
+  const message = stars === 3 ? 'Perfect! You are a genius! 🧠' : stars === 2 ? 'Great job! Keep it up! 💪' : stars === 1 ? 'Good try! Practice more!' : "Don't give up! Try again!"
 
   function renderStars() {
     return [1, 2, 3].map(i => (
@@ -31,6 +31,7 @@ function ResultScreen() {
     }}>
       <div style={{ fontSize: 80 }}>{emoji}</div>
       <h1 style={{ color: '#6200EE', fontSize: 28, margin: '8px 0' }}>Level {level} Complete!</h1>
+      <p style={{ color: '#888', fontSize: 14, margin: '0 0 8px' }}>Grade {grade}</p>
       <div style={{ marginBottom: 24 }}>{renderStars()}</div>
 
       <div style={{
@@ -60,8 +61,29 @@ function ResultScreen() {
         </div>
       </div>
 
+      {parseInt(level) < 10 && stars === 3 && (
+        <button
+          onClick={() => navigate(`/quiz/${parseInt(level) + 1}/${name}/${grade}`)}
+          style={{
+            width: '100%',
+            maxWidth: 400,
+            padding: '16px',
+            fontSize: 18,
+            fontWeight: 'bold',
+            background: '#03DAC6',
+            color: 'white',
+            border: 'none',
+            borderRadius: 12,
+            cursor: 'pointer',
+            marginBottom: 12
+          }}
+        >
+          Next Level ➡️
+        </button>
+      )}
+
       <button
-        onClick={() => navigate(`/levels/${name}`)}
+        onClick={() => navigate(`/levels/${name}/${grade}`)}
         style={{
           width: '100%',
           maxWidth: 400,
@@ -80,7 +102,7 @@ function ResultScreen() {
       </button>
 
       <button
-        onClick={() => navigate(`/quiz/${level}/${name}`)}
+        onClick={() => navigate(`/quiz/${level}/${name}/${grade}`)}
         style={{
           width: '100%',
           maxWidth: 400,

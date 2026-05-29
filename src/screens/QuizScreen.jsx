@@ -4,7 +4,7 @@ import { db } from '../firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 
 function QuizScreen() {
-  const { level, name } = useParams()
+  const { level, name, grade } = useParams()
   const navigate = useNavigate()
 
   const [levelQuestions, setLevelQuestions] = useState([])
@@ -15,19 +15,28 @@ function QuizScreen() {
   const [hintLevel, setHintLevel] = useState(0)
   const [showHint, setShowHint] = useState(false)
 
-useEffect(() => {
+  useEffect(() => {
     async function loadQuestions() {
       const q = query(
         collection(db, 'questions'),
-        where('gameLevel', '==', parseInt(level))
+        where('gameLevel', '==', parseInt(level)),
+        where('gradeLevel', '==', parseInt(grade))
       )
       const snapshot = await getDocs(q)
       const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      // Fresh shuffle every time — prevents memorization
       const shuffled = loaded.sort(() => Math.random() - 0.5)
-      setLevelQuestions(shuffled)
+
+      // Later levels draw from a bigger pool before picking 5
+      const poolSize = Math.min(loaded.length, 5 + (parseInt(level) - 1) * 2)
+      const pool = shuffled.slice(0, poolSize)
+      const final = pool.sort(() => Math.random() - 0.5).slice(0, 5)
+
+      setLevelQuestions(final)
     }
     loadQuestions()
-  }, [level])
+  }, [level, grade])
 
   if (levelQuestions.length === 0) return <div style={{ padding: 32 }}>Loading...</div>
 
@@ -47,8 +56,8 @@ useEffect(() => {
     if (isLast) {
       const total = levelQuestions.length
       const stars = correctCount === total ? 3 : correctCount >= total * 0.7 ? 2 : correctCount >= total * 0.5 ? 1 : 0
-      localStorage.setItem(`stars_${name}_${level}`, stars)
-      navigate(`/result/${level}/${correctCount}/${total}/${name}`)
+      localStorage.setItem(`stars_${name}_${grade}_${level}`, stars)
+      navigate(`/result/${level}/${correctCount}/${total}/${name}/${grade}`)
     } else {
       setCurrentIndex(prev => prev + 1)
       setSelectedOption(null)
@@ -65,18 +74,18 @@ useEffect(() => {
     }
   }
 
-function getOptionColor(index) {
-  if (!answered) return { bg: 'white', text: '#333', border: '#EDE1FF' }
-  if (index === question.correctIndex) return { bg: '#4CAF50', text: 'white', border: '#4CAF50' }
-  if (index === selectedOption) return { bg: '#F44336', text: 'white', border: '#F44336' }
-  return { bg: 'white', text: '#333', border: '#EDE1FF' }
-}
+  function getOptionColor(index) {
+    if (!answered) return { bg: 'white', text: '#333', border: '#EDE1FF' }
+    if (index === question.correctIndex) return { bg: '#4CAF50', text: 'white', border: '#4CAF50' }
+    if (index === selectedOption) return { bg: '#F44336', text: 'white', border: '#F44336' }
+    return { bg: 'white', text: '#333', border: '#EDE1FF' }
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f0ff', padding: '24px' }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <button onClick={() => navigate(`/levels/${name}`)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button>
+        <button onClick={() => navigate(`/levels/${name}/${grade}`)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button>
         <span style={{ fontWeight: 'bold', color: '#6200EE' }}>Level {level} • Q{currentIndex + 1}/{levelQuestions.length}</span>
         <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>✅ {correctCount}</span>
       </div>
@@ -94,35 +103,35 @@ function getOptionColor(index) {
       </div>
 
       <div>
-       {question.options.map((option, index) => {
-  const colors = getOptionColor(index)
-  return (
-    <div
-      key={index}
-      onClick={() => handleSelect(index)}
-      style={{
-        width: '100%',
-        padding: '14px 16px',
-        marginBottom: 10,
-        borderRadius: 12,
-        border: `2px solid ${colors.border}`,
-        background: colors.bg,
-        cursor: answered ? 'default' : 'pointer',
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10
-      }}
-    >
-      <span style={{ fontWeight: 'bold', fontSize: 15, color: colors.text, flexShrink: 0 }}>
-        {['A', 'B', 'C', 'D'][index]}.
-      </span>
-      <span style={{ fontSize: 15, color: colors.text, lineHeight: 1.4, wordBreak: 'break-word' }}>
-        {option}
-      </span>
-    </div>
-  )
-})}
+        {question.options.map((option, index) => {
+          const colors = getOptionColor(index)
+          return (
+            <div
+              key={index}
+              onClick={() => handleSelect(index)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                marginBottom: 10,
+                borderRadius: 12,
+                border: `2px solid ${colors.border}`,
+                background: colors.bg,
+                cursor: answered ? 'default' : 'pointer',
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10
+              }}
+            >
+              <span style={{ fontWeight: 'bold', fontSize: 15, color: colors.text, flexShrink: 0 }}>
+                {['A', 'B', 'C', 'D'][index]}.
+              </span>
+              <span style={{ fontSize: 15, color: colors.text, lineHeight: 1.4, wordBreak: 'break-word' }}>
+                {option}
+              </span>
+            </div>
+          )
+        })}
       </div>
 
       {showHint && hintLevel > 0 && (
