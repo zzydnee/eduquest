@@ -4,6 +4,7 @@ import LevelMapScreen from './screens/LevelMapScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
+import AdminScreen from './screens/AdminScreen'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/quiz/:level/:name" element={<QuizScreen />} />
         <Route path="/result/:level/:correct/:total/:name" element={<ResultScreen />} />
         <Route path="/leaderboard" element={<LeaderboardScreen />} />
+        <Route path="/admin" element={<AdminScreen />} />
       </Routes>
     </BrowserRouter>
   )
