@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import questions from '../data/questions'
+import { db } from '../firebase'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 
 function QuizScreen() {
   const { level, name } = useParams()
@@ -14,10 +15,18 @@ function QuizScreen() {
   const [hintLevel, setHintLevel] = useState(0)
   const [showHint, setShowHint] = useState(false)
 
-  useEffect(() => {
-    const filtered = questions.filter(q => q.gameLevel === parseInt(level))
-    const shuffled = filtered.sort(() => Math.random() - 0.5)
-    setLevelQuestions(shuffled)
+useEffect(() => {
+    async function loadQuestions() {
+      const q = query(
+        collection(db, 'questions'),
+        where('gameLevel', '==', parseInt(level))
+      )
+      const snapshot = await getDocs(q)
+      const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const shuffled = loaded.sort(() => Math.random() - 0.5)
+      setLevelQuestions(shuffled)
+    }
+    loadQuestions()
   }, [level])
 
   if (levelQuestions.length === 0) return <div style={{ padding: 32 }}>Loading...</div>
@@ -56,24 +65,12 @@ function QuizScreen() {
     }
   }
 
-  function getOptionStyle(index) {
-    const base = {
-      width: '100%',
-      padding: '14px 16px',
-      marginBottom: 10,
-      fontSize: 15,
-      borderRadius: 12,
-      border: '2px solid #EDE1FF',
-      background: 'white',
-      cursor: answered ? 'default' : 'pointer',
-      textAlign: 'left',
-      boxSizing: 'border-box'
-    }
-    if (!answered) return base
-    if (index === question.correctIndex) return { ...base, background: '#4CAF50', color: 'white', border: '2px solid #4CAF50' }
-    if (index === selectedOption) return { ...base, background: '#F44336', color: 'white', border: '2px solid #F44336' }
-    return base
-  }
+function getOptionColor(index) {
+  if (!answered) return { bg: 'white', text: '#333', border: '#EDE1FF' }
+  if (index === question.correctIndex) return { bg: '#4CAF50', text: 'white', border: '#4CAF50' }
+  if (index === selectedOption) return { bg: '#F44336', text: 'white', border: '#F44336' }
+  return { bg: 'white', text: '#333', border: '#EDE1FF' }
+}
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f0ff', padding: '24px' }}>
@@ -97,12 +94,35 @@ function QuizScreen() {
       </div>
 
       <div>
-        {question.options.map((option, index) => (
-          <button key={index} onClick={() => handleSelect(index)} style={getOptionStyle(index)}>
-            <span style={{ fontWeight: 'bold', marginRight: 8 }}>{['A', 'B', 'C', 'D'][index]}.</span>
-            {option}
-          </button>
-        ))}
+       {question.options.map((option, index) => {
+  const colors = getOptionColor(index)
+  return (
+    <div
+      key={index}
+      onClick={() => handleSelect(index)}
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        marginBottom: 10,
+        borderRadius: 12,
+        border: `2px solid ${colors.border}`,
+        background: colors.bg,
+        cursor: answered ? 'default' : 'pointer',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+      }}
+    >
+      <span style={{ fontWeight: 'bold', fontSize: 15, color: colors.text, flexShrink: 0 }}>
+        {['A', 'B', 'C', 'D'][index]}.
+      </span>
+      <span style={{ fontSize: 15, color: colors.text, lineHeight: 1.4, wordBreak: 'break-word' }}>
+        {option}
+      </span>
+    </div>
+  )
+})}
       </div>
 
       {showHint && hintLevel > 0 && (
